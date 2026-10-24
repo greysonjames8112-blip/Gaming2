@@ -7,30 +7,20 @@
 <style>
   :root { --bg:#12122b; --panel:#1d1d44; --line:#383873; --text:#f1f0ff; --muted:#a3a2d0; --mint:#5eead4; --coral:#ff7a90; }
   * { -webkit-tap-highlight-color:transparent; }
-  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
-    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif; }
   canvas { display:block; touch-action:none; }
-  button { font:inherit; color:var(--text); background:rgba(29,29,68,.82); border:1px solid var(--line); border-radius:10px;
-    padding:8px 11px; cursor:pointer; }
-  button:active { background:var(--mint); color:#04332c; }
-  button.on { background:var(--mint); color:#04332c; }
+  button { font:inherit; color:var(--text); background:rgba(29,29,68,.82); border:1px solid var(--line); border-radius:10px; padding:8px 11px; cursor:pointer; }
+  button:active, button.on { background:var(--mint); color:#04332c; }
   .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
-
-  /* ---- Menu ---- */
-  #menu { z-index:30; background:radial-gradient(900px 520px at 15% 105%, #ff7a9033, transparent 60%),
-    radial-gradient(900px 520px at 95% -10%, #5eead433, transparent 55%), var(--bg); }
+  #menu { z-index:30; background:radial-gradient(900px 520px at 15% 105%, #ff7a9033, transparent 60%), radial-gradient(900px 520px at 95% -10%, #5eead433, transparent 55%), var(--bg); }
   .card { width:min(390px,90vw); background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 24px 20px; }
-  .card h1 { margin:0 0 4px; font-size:40px; letter-spacing:.02em; }
+  .card h1 { margin:0 0 4px; font-size:40px; }
   .card p.sub { margin:0 0 16px; color:var(--muted); font-size:14px; line-height:1.4; }
   .card label { display:block; margin:12px 0 5px; font-size:13px; color:var(--muted); }
-  .card input { width:100%; box-sizing:border-box; padding:11px 12px; font-size:16px; color:var(--text); background:#14143a;
-    border:1px solid var(--line); border-radius:9px; outline:none; }
-  .card input:focus { border-color:var(--mint); }
+  .card input { width:100%; box-sizing:border-box; padding:11px 12px; font-size:16px; color:var(--text); background:#14143a; border:1px solid var(--line); border-radius:9px; outline:none; }
   #play { width:100%; margin-top:18px; padding:13px; font-size:18px; font-weight:700; color:#04332c; background:var(--mint); border:0; }
   #msg { min-height:20px; margin-top:10px; font-size:14px; color:var(--coral); }
   .keys { margin-top:8px; font-size:12.5px; color:var(--muted); line-height:1.6; }
-
-  /* ---- HUD ---- */
   #hud { position:fixed; inset:0; display:none; pointer-events:none; z-index:15; }
   #title { position:absolute; left:10px; top:8px; font-weight:700; text-shadow:0 1px 3px #000; pointer-events:auto; }
   #title small { display:block; font-weight:400; color:#dfe; opacity:.85; }
@@ -49,30 +39,19 @@
   #btns { position:absolute; right:10px; top:8px; display:flex; flex-direction:column; gap:6px; pointer-events:auto; z-index:20; }
   #btns button { min-width:92px; font-size:13px; }
   #emotes { position:absolute; right:112px; top:8px; display:none; gap:6px; flex-direction:column; pointer-events:auto; z-index:20; }
-  #lock { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10; background:rgba(10,10,30,.55);
-    font-size:24px; font-weight:800; text-align:center; cursor:pointer; }
+  #lock { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10; background:rgba(10,10,30,.55); font-size:24px; font-weight:800; text-align:center; cursor:pointer; }
   #lock small { display:block; margin-top:8px; font-size:14px; font-weight:400; color:var(--muted); }
   #fade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .35s; z-index:25; }
-
-  /* ---- Touch controls ---- */
   #touch { position:fixed; inset:0; display:none; z-index:6; touch-action:none; user-select:none; -webkit-user-select:none; pointer-events:none; }
   #joyBase { position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; border:2px solid #fff5; background:#fff1; display:none; pointer-events:auto; }
   #joyKnob { position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%; background:#fff6; }
-  .tbtn { position:absolute; border-radius:50%; border:2px solid #fff7; background:rgba(29,29,68,.55); color:#fff; font-weight:700; font-size:14px;
-    display:flex; align-items:center; justify-content:center; pointer-events:auto; }
-  .tbtn.on { background:rgba(94,234,212,.8); color:#04332c; }
+  .tbtn { position:absolute; border-radius:50%; border:2px solid #fff7; background:rgba(29,29,68,.55); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; pointer-events:auto; }
   #bJump { right:max(22px,env(safe-area-inset-right)); bottom:26px; width:80px; height:80px; }
   #bWeb { right:120px; bottom:30px; width:70px; height:70px; display:none; }
   body.touch .keys.desk { display:none; }
   body.touch #btns { top:6px; flex-direction:row; flex-wrap:wrap; justify-content:flex-end; width:260px; }
   body.touch #btns button { min-width:0; padding:7px 9px; font-size:12px; }
   body.touch #emotes { right:10px; top:84px; flex-direction:row; }
-  body.touch #chatlog { bottom:auto; top:48px; width:46vw; font-size:12px; }
-  body.touch #title { font-size:14px; }
-  body.touch #timer { font-size:20px; }
-  body.touch #chatbar { bottom:auto; top:46px; width:62vw; }
-
-  /* ---- Paint studio ---- */
   #studio { position:fixed; inset:0; display:none; z-index:22; pointer-events:none; }
   #studio > div { position:absolute; left:0; right:0; display:flex; flex-wrap:wrap; gap:6px; padding:8px; justify-content:center; pointer-events:none; }
   #studio button, #studio input, #studio label { pointer-events:auto; touch-action:manipulation; }
@@ -90,12 +69,11 @@
     <p class="sub">Hang out, paint your blocky character, race friends, run parkour, and swing through a city.</p>
     <label for="name">Username</label>
     <input id="name" maxlength="16" placeholder="Your name" autocomplete="off">
-    <label for="server">Server address</label>
-    <input id="server" placeholder="Auto-detected host" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label for="server">Server address (leave blank for automatic)</label>
+    <input id="server" placeholder="" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="play">Play</button>
     <div id="msg"></div>
     <div class="keys desk">WASD move · Shift sprint · Space jump · Mouse look · V camera · Enter chat · 1-4 emotes · M voice · P paint · R respawn</div>
-    <div class="keys">Voice chat needs an HTTPS link from your host and microphone permission.</div>
   </div>
 </div>
 
@@ -145,7 +123,6 @@
   </div>
 </div>
 
-<!-- Three.js pinned to r128 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 "use strict";
@@ -155,9 +132,6 @@ const lerpAng = (a, b, k) => { let d = b - a; d = Math.atan2(Math.sin(d), Math.c
 const IS_TOUCH = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0 && matchMedia("(pointer:coarse)").matches);
 if (IS_TOUCH) document.body.classList.add("touch");
 
-// =====================================================================
-// 1. DATA GENERATORS
-// =====================================================================
 function mulberry32(a) {
   return function () {
     a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -230,9 +204,6 @@ function cityData() {
   return out;
 }
 
-// =====================================================================
-// 2. RENDERER, SCENE, SKY
-// =====================================================================
 const renderer = new THREE.WebGLRenderer({ antialias: !IS_TOUCH, powerPreference: "high-performance" });
 renderer.setPixelRatio(IS_TOUCH ? 1.25 : Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -297,9 +268,6 @@ function textSprite(text, o) {
   return sp;
 }
 
-// =====================================================================
-// 3. BLOCKY CHARACTERS
-// =====================================================================
 const ATLAS = 256;
 const PARTS = {
   head:  { w: 0.5,  h: 0.5, d: 0.5,  pw: 32, ph: 32, pd: 32, ox: 0,   oy: 0 },
@@ -343,4 +311,30 @@ function paintDefault(g, look) {
   g.fillStyle = "#b5524c"; g.fillRect(hf[0] + 12, hf[1] + 24, 8, 2);
   for (let f = 0; f < 6; f++) fill("torso", f, look.shirt);
   for (const part of ["armL", "armR"]) {
-    for (let f
+    for (let f = 0; f < 6; f++) fill(part, f, look.shirt);
+    for (const f of [0, 1, 4, 5]) fill(part, f, look.skin, 0.55, 1);
+    fill(part, 3, look.skin);
+  }
+  for (const part of ["legL", "legR"]) {
+    for (let f = 0; f < 6; f++) fill(part, f, look.pants);
+    for (const f of [0, 1, 4, 5]) fill(part, f, "#2b2d3a", 0.84, 1);
+    fill(part, 3, "#2b2d3a");
+  }
+}
+function newSkin(look) {
+  const canvas = document.createElement("canvas"); canvas.width = canvas.height = ATLAS;
+  const ctx = canvas.getContext("2d"); paintDefault(ctx, look);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  return { canvas: canvas, ctx: ctx, tex: tex, look: look };
+}
+function loadSkinImage(skin, dataUrl) {
+  const img = new Image();
+  img.onload = () => { skin.ctx.clearRect(0, 0, ATLAS, ATLAS); skin.ctx.drawImage(img, 0, 0, ATLAS, ATLAS); skin.tex.needsUpdate = true; };
+  img.src = dataUrl;
+}
+
+function makeCharacter(tex) {
+  const mat = new THREE.MeshLambertMaterial({ map: tex });
+  const obj = new THREE.Group(), root = new THREE.Group(), body = new THREE.Group();
+  root.scale.setS
