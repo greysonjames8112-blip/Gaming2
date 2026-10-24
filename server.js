@@ -1,5 +1,5 @@
 // =====================================================================
-// PIXEL PLAZA server
+// PIXEL PLAZA Server - Production Render Build
 // =====================================================================
 "use strict";
 const http = require("http");
@@ -7,7 +7,10 @@ const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
 
+// Render injects PORT automatically into process.env
 const PORT = process.env.PORT || 3000;
+const HOST = "0.0.0.0"; // Explicitly bind to all interfaces for Render
+
 const WORLDS = ["hub", "parkour", "race", "city"];
 const MAX_PLAYERS = 60;
 const MAX_PER_WORLD = 24;
@@ -20,17 +23,27 @@ for (const w of WORLDS) rooms[w] = { ids: new Set(), raceStart: 0, finishers: []
 const boards = { parkour: [], race: [] };
 let nextId = 1;
 
+// Utility functions
 const num = (v, lo, hi) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
 const rnd2 = n => Math.round(n * 100) / 100;
-function send(ws, obj) { if (ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+function send(ws, obj) {
+  if (ws && ws.readyState === 1) {
+    try { ws.send(JSON.stringify(obj)); } catch (e) { }
+  }
+}
+
 function toWorld(world, obj, exceptId) {
   const msg = JSON.stringify(obj);
   for (const id of rooms[world].ids) {
     if (id === exceptId) continue;
     const p = players.get(id);
-    if (p && p.ws.readyState === 1) p.ws.send(msg);
+    if (p && p.ws && p.ws.readyState === 1) {
+      try { p.ws.send(msg); } catch (e) { }
+    }
   }
 }
+
 const info = p => ({ id: p.id, name: p.name, skin: p.skin, voice: p.voice });
 const worldPlayers = (world, exceptId) =>
   [...rooms[world].ids].filter(id => id !== exceptId).map(id => info(players.get(id)));
@@ -58,18 +71,31 @@ function addTime(mode, name, time) {
   return true;
 }
 
-const INDEX = path.join(__dirname, "index.html");[span_2](start_span)[span_2](end_span)
+// HTTP Server setup
+const INDEX_PATH = path.resolve(__dirname, "index.html");
+
 const httpServer = http.createServer((req, res) => {
   const url = req.url.split("?")[0];
   if (url === "/" || url === "/index.html") {
-    fs.readFile(INDEX, (err, data) => {
-      if (err) { res.writeHead(500); res.end("index.html missing"); return; }
+    fs.readFile(INDEX_PATH, (err, data) => {
+      if (err) {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("500 Internal Error: index.html missing from root directory.");
+        return;
+      }
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
       res.end(data);
     });
-  } else if (url === "/health") { res.writeHead(200); res.end("ok"); }
-  else { res.writeHead(404); res.end("not found"); }
+  } else if (url === "/health") {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("ok");
+  } else {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("404 Not Found");
+  }
 });
+
+// WebSocket Server attached to the HTTP server
 const wss = new WebSocketServer({ server: httpServer, maxPayload: 128 * 1024 });
 
 function moveToWorld(p, world) {
@@ -123,7 +149,11 @@ wss.on("connection", (ws) => {
       }
       case "world": {
         if (!WORLDS.includes(m.w) || m.w === p.world) return;
-        if (rooms[m.w].ids.size >= MAX_PER_WORLD) { send(ws, { t: "feed", m: "That world is full." }); send(ws, { t: "world", w: p.world, players: worldPlayers(p.world, p.id), lb: lbAll(), same: 1 }); return; }
+        if (rooms[m.w].ids.size >= MAX_PER_WORLD) {
+          send(ws, { t: "feed", m: "That world is full." });
+          send(ws, { t: "world", w: p.world, players: worldPlayers(p.world, p.id), lb: lbAll(), same: 1 });
+          return;
+        }
         moveToWorld(p, m.w);
         send(ws, { t: "world", w: m.w, players: worldPlayers(m.w, p.id), lb: lbAll() });
         break;
@@ -192,6 +222,7 @@ wss.on("connection", (ws) => {
   ws.on("error", () => { });
 });
 
+// Snapshot sync tick
 setInterval(() => {
   const n = Date.now();
   for (const w of WORLDS) {
@@ -205,6 +236,7 @@ setInterval(() => {
   }
 }, TICK_MS);
 
+// Heartbeat ping/pong
 setInterval(() => {
   for (const ws of wss.clients) {
     if (!ws.isAlive) { ws.terminate(); continue; }
@@ -212,5 +244,20 @@ setInterval(() => {
   }
 }, 10000);
 
-httpServer.listen(PORT, () => console.log("PIXEL PLAZA running on http://localhost:" + PORT));
-process.on("SIGTERM", () => { wss.close(); httpServer.close(() => process.exit(0)); });
+// Global Error Handler to prevent crash loop on Render
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+});
+
+httpServer.listen(PORT, HOST, () => {
+  console.log(`PIXEL PLAZA running on http://${HOST}:${PORT}`);
+});
+
+process.on("SIGTERM", () => {
+  wss.close();
+  httpServer.close(() => process.exit(0));
+});
