@@ -230,3 +230,4 @@ setInterval(() => {
 
 httpServer.listen(PORT, () => console.log("PIXEL PLAZA running on http://localhost:" + PORT));
 process.on("SIGTERM", () => { wss.close(); httpServer.close(() => process.exit(0)); });
+                
