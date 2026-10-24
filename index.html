@@ -6,38 +6,68 @@
 <title>Pixel Plaza</title>
 <style>
   :root { --bg:#12122b; --panel:#1d1d44; --line:#383873; --text:#f1f0ff; --muted:#a3a2d0; --mint:#5eead4; --coral:#ff7a90; }
-  * { -webkit-tap-highlight-color:transparent; touch-action: manipulation; }
+  * { -webkit-tap-highlight-color:transparent; }
   html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif; }
   canvas { display:block; touch-action:none; }
-  button { font:inherit; color:var(--text); background:rgba(29,29,68,.82); border:1px solid var(--line); border-radius:10px; padding:12px 16px; cursor:pointer; }
+  button { font:inherit; color:var(--text); background:rgba(29,29,68,.82); border:1px solid var(--line); border-radius:10px; padding:8px 11px; cursor:pointer; }
   button:active, button.on { background:var(--mint); color:#04332c; }
-  .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:50; }
-  #menu { background:radial-gradient(900px 520px at 15% 105%, #ff7a9033, transparent 60%), radial-gradient(900px 520px at 95% -10%, #5eead433, transparent 55%), var(--bg); }
-  .card { width:min(390px,90vw); background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 24px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+
+  /* ---- Menu ---- */
+  #menu { z-index:30; background:radial-gradient(900px 520px at 15% 105%, #ff7a9033, transparent 60%), radial-gradient(900px 520px at 95% -10%, #5eead433, transparent 55%), var(--bg); }
+  .card { width:min(390px,90vw); background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 24px 20px; }
   .card h1 { margin:0 0 4px; font-size:40px; }
   .card p.sub { margin:0 0 16px; color:var(--muted); font-size:14px; line-height:1.4; }
   .card label { display:block; margin:12px 0 5px; font-size:13px; color:var(--muted); }
-  .card input { width:100%; box-sizing:border-box; padding:12px; font-size:16px; color:var(--text); background:#14143a; border:1px solid var(--line); border-radius:9px; outline:none; }
-  #play { width:100%; margin-top:18px; padding:14px; font-size:18px; font-weight:700; color:#04332c; background:var(--mint); border:0; border-radius:10px; }
+  .card input { width:100%; box-sizing:border-box; padding:11px 12px; font-size:16px; color:var(--text); background:#14143a; border:1px solid var(--line); border-radius:9px; outline:none; }
+  #play { width:100%; margin-top:18px; padding:13px; font-size:18px; font-weight:700; color:#04332c; background:var(--mint); border:0; }
   #msg { min-height:20px; margin-top:10px; font-size:14px; color:var(--coral); }
   .keys { margin-top:8px; font-size:12.5px; color:var(--muted); line-height:1.6; }
-  
+
+  /* ---- HUD ---- */
   #hud { position:fixed; inset:0; display:none; pointer-events:none; z-index:15; }
   #title { position:absolute; left:10px; top:8px; font-weight:700; text-shadow:0 1px 3px #000; pointer-events:auto; }
   #title small { display:block; font-weight:400; color:#dfe; opacity:.85; }
   #timer { position:absolute; top:8px; left:50%; transform:translateX(-50%); font-size:26px; font-weight:800; text-shadow:0 2px 4px #000; text-align:center; }
+  #timer small { display:block; font-size:13px; font-weight:400; }
   #big { position:absolute; top:28%; left:0; right:0; text-align:center; font-size:84px; font-weight:900; text-shadow:0 4px 10px #000; }
+  #lbBox { position:absolute; right:10px; bottom:12px; background:rgba(18,18,43,.6); border-radius:10px; padding:8px 12px; font-size:13px; display:none; }
+  #lbBox b { color:var(--mint); }
+  #cross { position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%; background:#fff; box-shadow:0 0 0 1.5px #0008; display:none; }
   #toast { position:absolute; left:50%; bottom:90px; transform:translateX(-50%); background:rgba(18,18,43,.85); padding:8px 14px; border-radius:10px; font-size:14px; display:none; z-index:20; }
+  #chatlog { position:absolute; left:10px; bottom:58px; width:min(380px,60vw); font-size:14px; line-height:1.35; text-shadow:0 1px 3px #000; }
+  #chatlog div { margin-top:2px; word-wrap:break-word; }
+  #chatlog .sys { color:#ffe08a; } #chatlog b { color:var(--mint); }
+  #chatbar { position:absolute; left:10px; bottom:12px; width:min(420px,70vw); display:none; gap:6px; pointer-events:auto; z-index:20; }
+  #chatbar input { flex:1; font-size:16px; padding:9px 11px; border-radius:10px; border:1px solid var(--line); background:rgba(18,18,43,.92); color:var(--text); outline:none; min-width:0; }
   #btns { position:absolute; right:10px; top:8px; display:flex; flex-direction:column; gap:6px; pointer-events:auto; z-index:20; }
   #btns button { min-width:92px; font-size:13px; }
-  
-  #touch { position:fixed; inset:0; display:none; z-index:25; touch-action:none; user-select:none; pointer-events:none; }
+  #emotes { position:absolute; right:112px; top:8px; display:none; gap:6px; flex-direction:column; pointer-events:auto; z-index:20; }
+  #lock { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10; background:rgba(10,10,30,.55); font-size:24px; font-weight:800; text-align:center; cursor:pointer; }
+  #lock small { display:block; margin-top:8px; font-size:14px; font-weight:400; color:var(--muted); }
+  #fade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .35s; z-index:25; }
+
+  /* ---- Touch controls ---- */
+  #touch { position:fixed; inset:0; display:none; z-index:6; touch-action:none; user-select:none; -webkit-user-select:none; pointer-events:none; }
   #joyBase { position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; border:2px solid #fff5; background:#fff1; display:none; pointer-events:auto; }
   #joyKnob { position:absolute; left:50%; top:50%; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%; background:#fff6; }
   .tbtn { position:absolute; border-radius:50%; border:2px solid #fff7; background:rgba(29,29,68,.55); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; pointer-events:auto; }
-  #bJump { right:25px; bottom:25px; width:80px; height:80px; }
+  .tbtn.on { background:rgba(94,234,212,.8); color:#04332c; }
+  #bJump { right:max(22px,env(safe-area-inset-right)); bottom:26px; width:80px; height:80px; }
+  #bWeb { right:120px; bottom:30px; width:70px; height:70px; display:none; }
+  body.touch .keys.desk { display:none; }
   body.touch #btns { top:6px; flex-direction:row; flex-wrap:wrap; justify-content:flex-end; width:260px; }
   body.touch #btns button { min-width:0; padding:7px 9px; font-size:12px; }
+  body.touch #emotes { right:10px; top:84px; flex-direction:row; }
+
+  /* ---- Paint studio ---- */
+  #studio { position:fixed; inset:0; display:none; z-index:22; pointer-events:none; }
+  #studio > div { position:absolute; left:0; right:0; display:flex; flex-wrap:wrap; gap:6px; padding:8px; justify-content:center; pointer-events:none; }
+  #studio button, #studio input, #studio label { pointer-events:auto; touch-action:manipulation; }
+  #stTop { top:0; } #stBottom { bottom:0; align-items:center; background:linear-gradient(transparent, #0008); padding-bottom:max(10px, env(safe-area-inset-bottom)) !important; }
+  .sw { width:30px; height:30px; border-radius:8px; border:2px solid #fff6; padding:0; }
+  #stBottom label { background:rgba(29,29,68,.8); padding:5px 10px; border-radius:10px; font-size:13px; }
+  #stColor { width:44px; height:34px; padding:0; border:0; background:none; }
 </style>
 </head>
 <body>
@@ -45,14 +75,14 @@
 <div id="menu" class="overlay">
   <div class="card">
     <h1>Pixel Plaza</h1>
-    <p class="sub">Hang out, paint your blocky character, race friends, and run parkour!</p>
+    <p class="sub">Hang out, paint your blocky character, race friends, run parkour, and swing through a city.</p>
     <label for="name">Username</label>
     <input id="name" maxlength="16" placeholder="Your name" autocomplete="off">
     <label for="server">Server address (leave blank)</label>
     <input id="server" placeholder="" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <button id="play">Play Game</button>
+    <button id="play">Play</button>
     <div id="msg"></div>
-    <div class="keys">Type a name and tap Play to jump straight in!</div>
+    <div class="keys desk">WASD move · Shift sprint · Space jump · Mouse look · V camera · Enter chat · P paint · R respawn</div>
   </div>
 </div>
 
@@ -60,15 +90,45 @@
   <div id="title"></div>
   <div id="timer"></div>
   <div id="big"></div>
+  <div id="cross"></div>
+  <div id="lbBox"></div>
   <div id="toast"></div>
+  <div id="chatlog"></div>
+  <div id="chatbar"><input id="chatin" maxlength="120" placeholder="Say something…" autocomplete="off"><button id="chatsend">Send</button></div>
   <div id="btns">
+    <button id="bChat">Chat</button>
+    <button id="bPaint">Paint</button>
+    <button id="bEmote">Emote</button>
+    <button id="bCam">Camera</button>
     <button id="bHub">Hub</button>
+    <button id="bRace" style="display:none">Start race</button>
+  </div>
+  <div id="emotes">
+    <button data-e="1">Wave</button><button data-e="2">Dance</button><button data-e="3">Cheer</button><button data-e="4">Sit</button><button data-e="0">Stop</button>
   </div>
 </div>
 
 <div id="touch">
   <div id="joyBase"><div id="joyKnob"></div></div>
+  <div class="tbtn" id="bWeb">Web</div>
   <div class="tbtn" id="bJump">Jump</div>
+</div>
+<div id="lock"><div>Click to play<small>Esc frees your mouse</small></div></div>
+<div id="fade"></div>
+
+<div id="studio">
+  <div id="stTop">
+    <button id="stDone" class="on">Done</button>
+    <button id="stMode">Mode: Paint</button>
+    <button id="stErase">Eraser</button>
+    <button id="stUndo">Undo</button>
+    <button id="stReset">Reset</button>
+  </div>
+  <div id="stBottom">
+    <span id="swatches" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;pointer-events:auto"></span>
+    <input type="color" id="stColor" value="#ff5a7a">
+    <label>Brush <input type="range" id="stSize" min="1" max="14" value="4"></label>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -76,150 +136,212 @@
 "use strict";
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const IS_TOUCH = true; // Force mobile touch mode layout
-document.body.classList.add("touch");
+const lerpAng = (a, b, k) => { let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); return a + d * k; };
+const IS_TOUCH = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0 && matchMedia("(pointer:coarse)").matches);
+if (IS_TOUCH) document.body.classList.add("touch");
 
-const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(1.25);
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function parkourData() {
+  const rnd = mulberry32(777), R = (a, b) => a + rnd() * (b - a);
+  const plats = [{ x: 0, y: -0.5, z: 0, w: 10, h: 1, d: 10, top: 0, kind: "start", i: 0 }];
+  const cps = [{ x: 0, z: 0, top: 0 }];
+  let px = 0, ptop = 0, pfront = -5;
+  for (let i = 1; i <= 46; i++) {
+    const k = rnd(); let w, d, kind;
+    if (k < 0.55) { w = R(3.5, 6); d = R(3.5, 6); kind = "block"; }
+    else if (k < 0.75) { w = R(2.2, 3); d = R(2.2, 3); kind = "small"; }
+    else if (k < 0.95) { w = 1.6; d = R(7, 10); kind = "beam"; }
+    else { w = R(7, 9); d = R(7, 9); kind = "wide"; }
+    const gap = Math.min(4.6, R(2.2, 3.2) + i * 0.04);
+    const top = ptop + R(-0.4, 0.9);
+    const x = Math.max(-16, Math.min(16, px + R(-3.5, 3.5)));
+    const z = pfront - gap - d / 2;
+    plats.push({ x: x, y: top - 0.5, z: z, w: w, h: 1, d: d, top: top, kind: kind, i: i });
+    px = x; ptop = top; pfront = z - d / 2;
+    if (i % 10 === 0) cps.push({ x: x, z: z, top: top });
+  }
+  const fz = pfront - 3 - 6, ftop = ptop + 0.3;
+  plats.push({ x: 0, y: ftop - 0.5, z: fz, w: 14, h: 1, d: 12, top: ftop, kind: "finish", i: 47 });
+  return { plats: plats, cps: cps, finish: { x: 0, z: fz, top: ftop, w: 14, d: 12 } };
+}
+function trackData() {
+  const A = 70, B = 45, RC = 26, STEP = 1.6, cx = A - RC, cz = B - RC;
+  const pts = [];
+  const straight = (x0, z0, x1, z1) => {
+    const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / STEP)), dx = (x1 - x0) / L, dz = (z1 - z0) / L;
+    for (let i = 0; i < n; i++) pts.push({ x: x0 + (x1 - x0) * i / n, z: z0 + (z1 - z0) * i / n, dx: dx, dz: dz });
+  };
+  const arc = (ox, oz, a0, a1) => {
+    const n = Math.max(1, Math.round(Math.abs(a1 - a0) * RC / STEP));
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (a1 - a0) * i / n;
+      pts.push({ x: ox + RC * Math.cos(a), z: oz + RC * Math.sin(a), dx: -Math.sin(a), dz: Math.cos(a) });
+    }
+  };
+  const H = Math.PI / 2;
+  straight(0, -B, cx, -B);   arc(cx, -cz, -H, 0);
+  straight(A, -cz, A, cz);   arc(cx, cz, 0, H);
+  straight(cx, B, -cx, B);   arc(-cx, cz, H, 2 * H);
+  straight(-A, cz, -A, -cz); arc(-cx, -cz, 2 * H, 3 * H);
+  straight(-cx, -B, 0, -B);
+  const gates = [];
+  for (let k = 0; k < 8; k++) gates.push(pts[Math.round(k * pts.length / 8) % pts.length]);
+  const pads = [
+    { x0: 18, x1: 24, z0: -B - 4, z1: -B + 4, dx: 1, dz: 0 },
+    { x0: A - 4, x1: A + 4, z0: -3, z1: 3, dx: 0, dz: 1 },
+    { x0: -24, x1: -18, z0: B - 4, z1: B + 4, dx: -1, dz: 0 },
+    { x0: -A - 4, x1: -A + 4, z0: -3, z1: 3, dx: 0, dz: -1 }
+  ];
+  return { pts: pts, gates: gates, pads: pads, A: A, B: B, W: 14 };
+}
+function cityData() {
+  const rnd = mulberry32(4242), R = (a, b) => a + rnd() * (b - a), out = [], CELL = 46;
+  for (let gx = -4; gx <= 4; gx++) for (let gz = -4; gz <= 4; gz++) {
+    const w = R(20, 29), d = R(20, 29), core = Math.abs(gx) <= 1 && Math.abs(gz) <= 1;
+    const h = core ? R(95, 150) : R(28, 95), ox = R(-3, 3), oz = R(-3, 3), c = Math.floor(rnd() * 5);
+    if (gx === 0 && gz === 0) continue;
+    out.push({ cx: gx * CELL + ox, cz: gz * CELL + oz, w: w, d: d, h: h, c: c });
+  }
+  return out;
+}
+
+const renderer = new THREE.WebGLRenderer({ antialias: !IS_TOUCH, powerPreference: "high-performance" });
+renderer.setPixelRatio(IS_TOUCH ? 1.25 : Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 document.body.insertBefore(renderer.domElement, document.body.firstChild);
 const canvas = renderer.domElement;
 
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xd2e8f6, 100, 380);
 scene.background = new THREE.Color(0xd2e8f6);
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 900);
 camera.rotation.order = "YXZ";
 scene.add(camera);
 
-scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x6a8a55, 0.9));
+const hemi = new THREE.HemisphereLight(0xcfe8ff, 0x6a8a55, 0.85); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2dc, 0.9);
-sun.position.set(45, 75, 30);
-scene.add(sun);
+sun.castShadow = true;
+sun.shadow.mapSize.set(IS_TOUCH ? 1024 : 2048, IS_TOUCH ? 1024 : 2048);
+Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 260 });
+sun.shadow.bias = -0.0006;
+scene.add(sun); scene.add(sun.target);
+const SUN_OFF = new THREE.Vector3(45, 75, 30);
 
-// Simple ground plane so you immediately see the world
-const gnd = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshLambertMaterial({ color: 0x79b556 }));
-gnd.rotation.x = -Math.PI / 2;
-scene.add(gnd);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color(0x3a86d8) }, bottom: { value: new THREE.Color(0xd2e8f6) } },
+  vertexShader: "varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
+  fragmentShader: "uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ float h = normalize(vP).y; gl_FragColor = vec4(mix(bottom, top, pow(max(h,0.0), 0.55)), 1.0); }"
+});
+const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 24, 12), skyMat);
+sky.frustumCulled = false; sky.renderOrder = -10; scene.add(sky);
+const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(26, 14, 10), new THREE.MeshBasicMaterial({ color: 0xfff4d0, fog: false }));
+sunDisc.frustumCulled = false; scene.add(sunDisc);
 
-let ws = null, myId = 0, myName = "Player", playing = false;
-let yaw = 0, pitch = 0.2;
-const me = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, og: true };
-
-function getWebSocketUrl() {
-  const raw = $("server").value.trim();
-  if (raw) return (/^wss?:\/\//i.test(raw) ? raw : (location.protocol === "https:" ? "wss://" : "ws://") + raw);
-  return (location.protocol === "https:" ? "wss://" : "ws://") + (location.host || "localhost:3000");
+function applySky(s) {
+  hemi.intensity = s.hemi; hemi.color.setHex(s.hemiColor || 0xcfe8ff); hemi.groundColor.setHex(s.hemiGround || 0x6a8a55);
+  sun.intensity = s.sun; sun.color.setHex(s.sunColor || 0xfff2dc);
+  SUN_OFF.set(s.sx, s.sy, s.sz);
+  skyMat.uniforms.top.value.setHex(s.top); skyMat.uniforms.bottom.value.setHex(s.bottom);
+  scene.fog.color.setHex(s.fog); scene.fog.near = s.fogNear; scene.fog.far = s.fogFar; scene.background.setHex(s.fog);
+  sunDisc.material.color.setHex(s.discColor || 0xfff4d0); sunDisc.visible = s.disc !== false;
 }
 
-function showMenu(text) {
-  $("menu").style.display = "flex";
-  $("hud").style.display = "none";
-  $("touch").style.display = "none";
-  $("msg").textContent = text || "";
-  $("play").disabled = false;
-  playing = false;
+const matCache = {};
+const lam = color => matCache[color] || (matCache[color] = new THREE.MeshLambertMaterial({ color: color }));
+function rr(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function textSprite(text, o) {
+  o = o || {};
+  const size = o.size || 48, c = document.createElement("canvas"), g = c.getContext("2d");
+  g.font = "bold " + size + "px sans-serif";
+  const w = Math.ceil(g.measureText(text).width) + 44;
+  c.width = w; c.height = size + 30;
+  g.font = "bold " + size + "px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  if (o.bg) { g.fillStyle = o.bg; rr(g, 2, 2, w - 4, c.height - 4, 18); g.fill(); }
+  g.fillStyle = o.color || "#fff"; g.fillText(text, w / 2, c.height / 2 + 2);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  const k = o.scale || 0.012; sp.scale.set(w * k, c.height * k, 1);
+  return sp;
 }
 
-function connect() {
-  myName = $("name").value.trim() || "MobilePlayer";
-  const url = getWebSocketUrl();
-  $("msg").textContent = "Connecting…";
-  $("play").disabled = true;
-
-  let sock;
-  try {
-    sock = new WebSocket(url);
-  } catch (e) {
-    showMenu("Connection error.");
-    return;
+const ATLAS = 256;
+const PARTS = {
+  head:  { w: 0.5,  h: 0.5, d: 0.5,  pw: 32, ph: 32, pd: 32, ox: 0,   oy: 0 },
+  torso: { w: 0.7,  h: 0.8, d: 0.4,  pw: 45, ph: 51, pd: 26, ox: 0,   oy: 64 },
+  armL:  { w: 0.28, h: 0.8, d: 0.28, pw: 18, ph: 51, pd: 18, ox: 170, oy: 64 },
+  armR:  { w: 0.28, h: 0.8, d: 0.28, pw: 18, ph: 51, pd: 18, ox: 170, oy: 134 },
+  legL:  { w: 0.3,  h: 0.8, d: 0.3,  pw: 19, ph: 51, pd: 19, ox: 0,   oy: 142 },
+  legR:  { w: 0.3,  h: 0.8, d: 0.3,  pw: 19, ph: 51, pd: 19, ox: 80,  oy: 142 }
+};
+function faceRects(p) {
+  const ox = p.ox, oy = p.oy, w = p.pw, h = p.ph, d = p.pd;
+  return [[ox + d + w, oy + d, d, h], [ox, oy + d, d, h], [ox + d, oy, w, d],
+          [ox + d + w, oy, w, d], [ox + 2 * d + w, oy + d, w, h], [ox + d, oy + d, w, h]];
+}
+function setUV(geo, key) {
+  const rects = faceRects(PARTS[key]), uv = geo.attributes.uv;
+  for (let f = 0; f < 6; f++) {
+    const r = rects[f], u0 = r[0] / ATLAS, u1 = (r[0] + r[2]) / ATLAS, v0 = 1 - r[1] / ATLAS, v1 = 1 - (r[1] + r[3]) / ATLAS;
+    uv.setXY(f * 4 + 0, u0, v0); uv.setXY(f * 4 + 1, u1, v0); uv.setXY(f * 4 + 2, u0, v1); uv.setXY(f * 4 + 3, u1, v1);
   }
-  ws = sock;
-
-  sock.onopen = () => {
-    sock.send(JSON.stringify({ t: "join", name: myName, skin: null }));
+  uv.needsUpdate = true;
+}
+function randomLook(seed) {
+  const h = ((seed * 0.6180339) % 1);
+  const c = (hh, s, l) => "#" + new THREE.Color().setHSL(hh % 1, s, l).getHexString();
+  return { skin: ["#f2c9a0", "#d9a577", "#a8764d", "#7a4f32", "#ffe0c4"][seed % 5], shirt: c(h, 0.65, 0.55), pants: c(h + 0.5, 0.45, 0.35),
+           hair: ["#2b1d14", "#6b3b1a", "#e0b04a", "#c0392b", "#222a44"][(seed >> 1) % 5] };
+}
+function paintDefault(g, look) {
+  g.clearRect(0, 0, ATLAS, ATLAS);
+  const fill = (part, face, color, y0, y1) => {
+    const r = faceRects(PARTS[part])[face]; g.fillStyle = color;
+    g.fillRect(r[0], r[1] + Math.round(r[3] * (y0 || 0)), r[2], Math.ceil(r[3] * ((y1 === undefined ? 1 : y1) - (y0 || 0))));
   };
-  
-  sock.onmessage = ev => {
-    let m;
-    try { m = JSON.parse(ev.data); } catch (e) { return; }
-    if (m.t === "welcome") {
-      myId = m.id;
-      $("menu").style.display = "none";
-      $("hud").style.display = "block";
-      $("touch").style.display = "block";
-      playing = true;
-    }
-  };
-
-  sock.onerror = () => { if (!playing) showMenu("Could not connect to server."); };
-  sock.onclose = () => { if (!playing) showMenu("Disconnected."); };
-}
-
-// Dedicated touch handler for mobile play button to prevent swallowing
-const playBtn = $("play");
-function triggerPlay(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  connect();
-}
-playBtn.addEventListener("touchend", triggerPlay, { passive: false });
-playBtn.addEventListener("click", triggerPlay);
-
-// Basic mobile joystick movement
-const touch = { f: 0, r: 0, joyId: null, lookId: null, jx: 0, jy: 0, lx: 0, ly: 0 };
-$("touch").addEventListener("touchstart", e => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    if (t.clientX < innerWidth * 0.5 && touch.joyId === null) {
-      touch.joyId = t.identifier; touch.jx = t.clientX; touch.jy = t.clientY;
-      const jb = $("joyBase"); jb.style.display = "block"; jb.style.left = t.clientX + "px"; jb.style.top = t.clientY + "px";
-    } else if (t.clientX >= innerWidth * 0.5 && touch.lookId === null) {
-      touch.lookId = t.identifier; touch.lx = t.clientX; touch.ly = t.clientY;
-    }
+  for (let f = 0; f < 6; f++) fill("head", f, look.skin);
+  fill("head", 2, look.hair); fill("head", 4, look.hair);
+  for (const f of [0, 1, 4]) fill("head", f, look.hair, 0, 0.32);
+  fill("head", 5, look.hair, 0, 0.22);
+  const hf = faceRects(PARTS.head)[5];
+  g.fillStyle = "#1c1c28"; g.fillRect(hf[0] + 8, hf[1] + 14, 4, 5); g.fillRect(hf[0] + 20, hf[1] + 14, 4, 5);
+  g.fillStyle = "#b5524c"; g.fillRect(hf[0] + 12, hf[1] + 24, 8, 2);
+  for (let f = 0; f < 6; f++) fill("torso", f, look.shirt);
+  for (const part of ["armL", "armR"]) {
+    for (let f = 0; f < 6; f++) fill(part, f, look.shirt);
+    for (const f of [0, 1, 4, 5]) fill(part, f, look.skin, 0.55, 1);
+    fill(part, 3, look.skin);
   }
-}, { passive: false });
-
-$("touch").addEventListener("touchmove", e => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    if (t.identifier === touch.joyId) {
-      let dx = t.clientX - touch.jx, dy = t.clientY - touch.jy;
-      const m = Math.hypot(dx, dy);
-      if (m > 55) { dx = dx / m * 55; dy = dy / m * 55; }
-      touch.r = dx / 55; touch.f = -dy / 55;
-      $("joyKnob").style.transform = `translate(${dx}px,${dy}px)`;
-    } else if (t.identifier === touch.lookId) {
-      yaw -= (t.clientX - touch.lx) * 0.005;
-      pitch = clamp(pitch - (t.clientY - touch.ly) * 0.005, -1.35, 1.35);
-      touch.lx = t.clientX; touch.ly = t.clientY;
-    }
-  }
-}, { passive: false });
-
-function endTouch(e) {
-  for (const t of e.changedTouches) {
-    if (t.identifier === touch.joyId) { touch.joyId = null; touch.f = touch.r = 0; $("joyBase").style.display = "none"; }
-    if (t.identifier === touch.lookId) touch.lookId = null;
+  for (const part of ["legL", "legR"]) {
+    for (let f = 0; f < 6; f++) fill(part, f, look.pants);
+    for (const f of [0, 1, 4, 5]) fill(part, f, "#2b2d3a", 0.84, 1);
+    fill(part, 3, "#2b2d3a");
   }
 }
-$("touch").addEventListener("touchend", endTouch);
-$("touch").addEventListener("touchcancel", endTouch);
-
-// Render loop
-function frame() {
-  requestAnimationFrame(frame);
-  if (playing) {
-    const speed = 6;
-    const sy = Math.sin(yaw), cy = Math.cos(yaw);
-    me.x += (-sy * touch.f + cy * touch.r) * speed * 0.016;
-    me.z += (-cy * touch.f - sy * touch.r) * speed * 0.016;
-    
-    camera.position.set(me.x, me.y + 2, me.z + 4);
-    camera.rotation.set(pitch, yaw, 0);
-  }
-  renderer.render(scene, camera);
+function newSkin(look) {
+  const canvas = document.createElement("canvas"); canvas.width = canvas.height = ATLAS;
+  const ctx = canvas.getContext("2d"); paintDefault(ctx, look);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+  return { canvas: canvas, ctx: ctx, tex: tex, look: look };
 }
-frame();
-</script>
-</body>
-</html>
+function loadSkinImage(skin, dataUrl) {
+  const img = new Image();
+  img.onload = () => { skin.ctx.clearRect(0, 0, ATLAS, ATLAS); skin.ctx.drawImage(img, 0, 0, ATLAS, ATLAS); skin.tex.needsUpdate = true; };
+  img.src = dataUrl;
+}
+
+function makeCharacter(tex) {
+  const mat = new THREE.MeshLambertMaterial({ map: tex });
+  cons
