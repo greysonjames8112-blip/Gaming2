@@ -1,12 +1,5 @@
 // =====================================================================
 // PIXEL PLAZA server
-//  * Serves index.html and runs the WebSocket game server on one port.
-//  * Players live in "worlds" (hub, parkour, race, city). The server relays
-//    each player's position to the others in the same world 15x per second.
-//  * It also handles: chat, painted skins, voice-chat signaling (WebRTC),
-//    race countdowns and best-time leaderboards.
-//  Movement is client-side (it's a hangout game, not a competitive shooter);
-//  the server clamps and sanity-checks everything it relays.
 // =====================================================================
 "use strict";
 const http = require("http");
@@ -18,16 +11,15 @@ const PORT = process.env.PORT || 3000;
 const WORLDS = ["hub", "parkour", "race", "city"];
 const MAX_PLAYERS = 60;
 const MAX_PER_WORLD = 24;
-const MAX_VOICE = 8;                 // voice is a WebRTC mesh, so keep groups small
-const TICK_MS = 66;                  // ~15 snapshots per second
+const MAX_VOICE = 8;
+const TICK_MS = 66;
 
-const players = new Map();           // id -> player
+const players = new Map();
 const rooms = {};
 for (const w of WORLDS) rooms[w] = { ids: new Set(), raceStart: 0, finishers: [] };
-const boards = { parkour: [], race: [] };      // best times: [{ name, time }]
+const boards = { parkour: [], race: [] };
 let nextId = 1;
 
-// ---------- helpers ----------
 const num = (v, lo, hi) => (typeof v === "number" && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
 const rnd2 = n => Math.round(n * 100) / 100;
 function send(ws, obj) { if (ws.readyState === 1) ws.send(JSON.stringify(obj)); }
@@ -46,8 +38,6 @@ const lbList = mode => boards[mode].map(e => [e.name, e.time]);
 const lbAll = () => ({ parkour: lbList("parkour"), race: lbList("race") });
 function fmt(t) { const m = Math.floor(t / 60); return m + ":" + (t - m * 60).toFixed(1).padStart(4, "0"); }
 
-// Skins are PNG data URLs painted by players (256x256). We only check the shape here;
-// the client draws them onto a canvas, so a bad image can't hurt anyone.
 function validSkin(s) {
   return typeof s === "string" && s.length < 90000 && /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(s) ? s : null;
 }
@@ -68,8 +58,7 @@ function addTime(mode, name, time) {
   return true;
 }
 
-// ---------- HTTP ----------
-const INDEX = path.join(__dirname, "index.html");
+const INDEX = path.join(__dirname, "index.html");[span_2](start_span)[span_2](end_span)
 const httpServer = http.createServer((req, res) => {
   const url = req.url.split("?")[0];
   if (url === "/" || url === "/index.html") {
@@ -91,7 +80,6 @@ function moveToWorld(p, world) {
   toWorld(world, { t: "join", id: p.id, name: p.name, skin: p.skin, voice: p.voice }, p.id);
 }
 
-// ---------- connections ----------
 wss.on("connection", (ws) => {
   ws.isAlive = true;
   ws.on("pong", () => { ws.isAlive = true; });
@@ -113,13 +101,12 @@ wss.on("connection", (ws) => {
       rooms.hub.ids.add(id);
       send(ws, { t: "welcome", id: id, world: "hub", players: worldPlayers("hub", id), lb: lbAll() });
       toWorld("hub", { t: "join", id: id, name: p.name, skin: p.skin, voice: 0 }, id);
-      console.log("+ " + p.name + " #" + id + " (" + players.size + " online)");
       return;
     }
     if (!p) return;
 
     switch (m.t) {
-      case "st": {                       // [x, y, z, yaw, flags, emote, ax, ay, az]
+      case "st": {
         const a = m.s;
         if (!Array.isArray(a) || a.length < 9) return;
         p.st = [rnd2(num(a[0], -1500, 1500)), rnd2(num(a[1], -200, 600)), rnd2(num(a[2], -1500, 1500)),
@@ -129,7 +116,7 @@ wss.on("connection", (ws) => {
       }
       case "chat": {
         const text = cleanChat(m.m);
-        if (!text || now - p.lastChat < 500) return;      // 2 messages per second max
+        if (!text || now - p.lastChat < 500) return;
         p.lastChat = now;
         toWorld(p.world, { t: "chat", id: p.id, name: p.name, m: text });
         break;
@@ -148,7 +135,7 @@ wss.on("connection", (ws) => {
         toWorld(p.world, { t: "skin", id: p.id, s: s }, p.id);
         break;
       }
-      case "voice": {                    // player turned voice chat on/off
+      case "voice": {
         const on = m.on ? 1 : 0;
         if (on) {
           let n = 0;
@@ -159,12 +146,12 @@ wss.on("connection", (ws) => {
         toWorld(p.world, { t: "voice", id: p.id, on: on }, p.id);
         break;
       }
-      case "rtc": {                      // WebRTC signaling relay (offers, answers, ICE)
+      case "rtc": {
         const target = players.get(m.to | 0);
         if (target && target.world === p.world) send(target.ws, { t: "rtc", from: p.id, d: m.d });
         break;
       }
-      case "race": {                     // someone pressed "Start race"
+      case "race": {
         if (p.world !== "race") return;
         const room = rooms.race;
         if (room.raceStart && now < room.raceStart + 75000) { send(ws, { t: "feed", m: "A race is already underway." }); return; }
@@ -173,18 +160,18 @@ wss.on("connection", (ws) => {
         toWorld("race", { t: "feed", m: p.name + " started a race!" });
         break;
       }
-      case "fin": {                      // finished a race / parkour course
+      case "fin": {
         if (m.mode === "race" && p.world === "race") {
           const room = rooms.race;
           if (!room.raceStart || now < room.raceStart + 10000 || room.finishers.includes(p.id)) return;
-          const time = (now - room.raceStart) / 1000;       // race time is measured by the server
+          const time = (now - room.raceStart) / 1000;
           room.finishers.push(p.id);
           addTime("race", p.name, time);
           toWorld("race", { t: "feed", m: p.name + " finished #" + room.finishers.length + " in " + fmt(time) });
           toWorld("race", { t: "lb", lb: lbAll() });
         } else if (m.mode === "parkour" && p.world === "parkour") {
           const time = num(m.time, 0, 7200);
-          if (time < 20) return;                            // can't beat the course in under 20 s
+          if (time < 20) return;
           addTime("parkour", p.name, time);
           toWorld("parkour", { t: "feed", m: p.name + " finished the parkour in " + fmt(time) });
           toWorld("parkour", { t: "lb", lb: lbAll() });
@@ -201,12 +188,10 @@ wss.on("connection", (ws) => {
     rooms[p.world].ids.delete(p.id);
     players.delete(p.id);
     toWorld(p.world, { t: "leave", id: p.id });
-    console.log("- " + p.name + " #" + p.id + " (" + players.size + " online)");
   });
   ws.on("error", () => { });
 });
 
-// ---------- snapshots (15 Hz): each player gets the others in their world ----------
 setInterval(() => {
   const n = Date.now();
   for (const w of WORLDS) {
@@ -220,7 +205,6 @@ setInterval(() => {
   }
 }, TICK_MS);
 
-// Drop dead connections
 setInterval(() => {
   for (const ws of wss.clients) {
     if (!ws.isAlive) { ws.terminate(); continue; }
@@ -230,4 +214,3 @@ setInterval(() => {
 
 httpServer.listen(PORT, () => console.log("PIXEL PLAZA running on http://localhost:" + PORT));
 process.on("SIGTERM", () => { wss.close(); httpServer.close(() => process.exit(0)); });
-        
